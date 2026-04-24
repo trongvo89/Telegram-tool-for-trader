@@ -75,16 +75,23 @@ STRINGS: dict[str, str] = {
     "alert_pick_condition": "Chọn điều kiện cho *{symbol}* (giá hiện tại: `{price}`):",
     "alert_cond_above": "⬆️ Vượt qua",
     "alert_cond_below": "⬇️ Xuống dưới",
+    "alert_cond_pct_change": "📊 % Thay đổi",
     "alert_target_prompt": "Nhập giá mục tiêu:",
+    "alert_target_prompt_pct": "Nhập % thay đổi (vd `3` = cảnh báo khi giá dịch chuyển ±3% từ mức hiện tại):",
     "alert_created": (
         "✅ Đã tạo cảnh báo *#{id}*\n"
         "{symbol} {op} `{target}`\n"
         "Giá hiện tại: `{price}`"
     ),
+    "alert_created_pct": (
+        "✅ Đã tạo cảnh báo *#{id}*\n"
+        "{symbol} thay đổi ±`{target}`% từ `{reference}`"
+    ),
     "alert_symbol_invalid": "❌ Không tìm thấy giá cho mã này. Kiểm tra lại.",
     "alert_list_empty": "Chưa có cảnh báo nào đang bật. Dùng /alert để tạo.",
     "alert_list_header": "*Cảnh báo đang bật:*",
     "alert_list_item": "`#{id}` {symbol} {op} `{target}` (hiện: `{price}`)",
+    "alert_list_item_pct": "`#{id}` {symbol} ±`{target}`% từ `{reference}` (hiện: `{price}`)",
     "alert_deleted": "🗑 Đã xoá cảnh báo #{id}.",
     "alert_not_found": "Không tìm thấy cảnh báo.",
     "alert_limit_free": "⚠️ Gói Free giới hạn *{limit}* cảnh báo. /upgrade để không giới hạn.",
@@ -92,6 +99,11 @@ STRINGS: dict[str, str] = {
         "🚨 *Cảnh báo #{id} kích hoạt!*\n"
         "{symbol} {op} `{target}`\n"
         "Giá hiện tại: `{price}`"
+    ),
+    "alert_triggered_pct": (
+        "🚨 *Cảnh báo #{id} kích hoạt!*\n"
+        "{symbol} đã dịch `{pct}%` từ `{reference}` → `{price}`\n"
+        "Ngưỡng: ±{target}%"
     ),
     "alert_market_closed": "🕑 Thị trường đang đóng cửa (cuối tuần/lễ). Cảnh báo commodity sẽ tạm ngưng.",
 
@@ -107,7 +119,15 @@ STRINGS: dict[str, str] = {
     "log_tp": "Nhập take-profit (hoặc gõ `skip`):",
     "log_note": "Ghi chú ngắn (hoặc gõ `skip`):",
     "log_saved": "✅ Đã lưu lệnh *#{id}* {side} {symbol} @ `{entry}`",
+    "log_auto_close_note": "🤖 TP/SL đã thiết lập — lệnh sẽ tự động đóng khi chạm mục tiêu.",
     "log_limit_free": "⚠️ Gói Free giới hạn *{limit}* lệnh/tháng. /upgrade để không giới hạn.",
+    "trade_auto_closed": (
+        "🤖 *Lệnh #{id} tự động đóng — {reason}*\n"
+        "{symbol} @ `{exit}`\n"
+        "PnL: `{pnl}` USD ({pnl_pct}%)"
+    ),
+    "close_reason_tp": "Chốt lời TP",
+    "close_reason_sl": "Cắt lỗ SL",
 
     "close_usage": "Cú pháp: `/close <id> <giá_đóng>`",
     "close_not_found": "Không tìm thấy lệnh hoặc lệnh đã đóng.",

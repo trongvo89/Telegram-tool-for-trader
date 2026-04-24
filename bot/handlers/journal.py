@@ -192,17 +192,17 @@ async def on_log_note(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         trade_id = trade.id
 
     side_label = t("log_side_long", lang) if context.user_data["log_side"] == "long" else t("log_side_short", lang)
-    await update.message.reply_text(
-        t(
-            "log_saved",
-            lang,
-            id=trade_id,
-            side=side_label,
-            symbol=symbol,
-            entry=fmt(context.user_data["log_entry"], decimals),
-        ),
-        parse_mode=ParseMode.MARKDOWN,
+    reply = t(
+        "log_saved",
+        lang,
+        id=trade_id,
+        side=side_label,
+        symbol=symbol,
+        entry=fmt(context.user_data["log_entry"], decimals),
     )
+    if context.user_data.get("log_tp") or context.user_data.get("log_sl"):
+        reply += "\n" + t("log_auto_close_note", lang)
+    await update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
     context.user_data.clear()
     return ConversationHandler.END
 

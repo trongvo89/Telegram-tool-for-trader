@@ -7,7 +7,7 @@ import logging
 
 from telegram.ext import Application, ContextTypes
 
-from bot.services import alert_engine, price_feed
+from bot.services import alert_engine, journal_auto_close, price_feed
 from bot.services.subscription import expire_and_remind
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,9 @@ def schedule(app: Application) -> None:
     # alert scans
     jq.run_repeating(alert_engine.scan_premium, interval=5, first=10, name="alert_scan_premium")
     jq.run_repeating(alert_engine.scan_free, interval=60, first=30, name="alert_scan_free")
+    # auto TP/SL close — same tick rates as alert scans
+    jq.run_repeating(journal_auto_close.scan_premium, interval=5, first=12, name="auto_close_premium")
+    jq.run_repeating(journal_auto_close.scan_free, interval=60, first=35, name="auto_close_free")
     # subscription expiry sweep: every 6h, plus once 30s after startup
     jq.run_repeating(_expire_sweep, interval=6 * 3600, first=30, name="subscription_expiry")
     logger.info("Scheduled %d jobs", len(jq.jobs()))

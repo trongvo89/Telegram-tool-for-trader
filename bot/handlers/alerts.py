@@ -25,7 +25,7 @@ A_ASSET, A_SYMBOL, A_COND, A_TARGET = range(4)
 
 
 def _op_str(cond: str) -> str:
-    return {"above": ">", "below": "<"}.get(cond, cond)
+    return {"above": ">", "below": "<", "pct_change": "±%"}.get(cond, cond)
 
 
 def _asset_keyboard(lang: str) -> InlineKeyboardMarkup:
@@ -43,10 +43,13 @@ def _asset_keyboard(lang: str) -> InlineKeyboardMarkup:
 
 
 def _cond_keyboard(lang: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([[
-        InlineKeyboardButton(t("alert_cond_above", lang), callback_data="alert_cond:above"),
-        InlineKeyboardButton(t("alert_cond_below", lang), callback_data="alert_cond:below"),
-    ]])
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(t("alert_cond_above", lang), callback_data="alert_cond:above"),
+            InlineKeyboardButton(t("alert_cond_below", lang), callback_data="alert_cond:below"),
+        ],
+        [InlineKeyboardButton(t("alert_cond_pct_change", lang), callback_data="alert_cond:pct_change")],
+    ])
 
 
 async def alert_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -82,6 +85,7 @@ async def on_asset_pick(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         "alert_asset_class": info.asset_class,
         "alert_symbol": value,
         "alert_decimals": info.decimals,
+        "alert_current_price": price,
     })
     await q.edit_message_text(
         t("alert_pick_condition", lang, symbol=value, price=fmt(price, info.decimals)),
@@ -105,7 +109,11 @@ async def on_symbol_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text(t("alert_symbol_invalid", lang))
         return A_SYMBOL
     info = symbols.get_info(symbol)
-    context.user_data.update({"alert_symbol": symbol, "alert_decimals": info.decimals})
+    context.user_data.update({
+        "alert_symbol": symbol,
+        "alert_decimals": info.decimals,
+        "alert_current_price": price,
+    })
     await update.message.reply_text(
         t("alert_pick_condition", lang, symbol=symbol, price=fmt(price, info.decimals)),
         parse_mode=ParseMode.MARKDOWN,
@@ -120,7 +128,8 @@ async def on_cond_pick(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     lang = context.user_data.get("alert_lang", "vi")
     _, cond = q.data.split(":", 1)
     context.user_data["alert_cond"] = cond
-    await q.edit_message_text(t("alert_target_prompt", lang))
+    key = "alert_target_prompt_pct" if cond == "pct_change" else "alert_target_prompt"
+    await q.edit_message_text(t(key, lang))
     return A_TARGET
 
 
@@ -152,6 +161,7 @@ async def on_target(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     asset_class = context.user_data["alert_asset_class"]
     cond = context.user_data["alert_cond"]
     decimals = context.user_data.get("alert_decimals", 2)
+    reference = context.user_data.get("alert_current_price") if cond == "pct_change" else None
 
     async with session_scope() as s:
         a = Alert(
@@ -160,6 +170,7 @@ async def on_target(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             symbol=symbol,
             condition=cond,
             target=target,
+            reference=reference,
             active=True,
         )
         s.add(a)
@@ -167,8 +178,17 @@ async def on_target(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         alert_id = a.id
 
     price = await price_feed.get_price(symbol) or Decimal(0)
-    await update.message.reply_text(
-        t(
+    if cond == "pct_change" and reference:
+        reply_text = t(
+            "alert_created_pct",
+            lang,
+            id=alert_id,
+            symbol=symbol,
+            target=f"{target:.2f}",
+            reference=fmt(reference, decimals),
+        )
+    else:
+        reply_text = t(
             "alert_created",
             lang,
             id=alert_id,
@@ -176,9 +196,8 @@ async def on_target(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             op=_op_str(cond),
             target=fmt(target, decimals),
             price=fmt(price, decimals),
-        ),
-        parse_mode=ParseMode.MARKDOWN,
-    )
+        )
+    await update.message.reply_text(reply_text, parse_mode=ParseMode.MARKDOWN)
     context.user_data.clear()
     return ConversationHandler.END
 
@@ -199,8 +218,18 @@ async def list_alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     for a in rows:
         decimals = symbols.get_info(a.symbol).decimals
         price = await price_feed.get_price(a.symbol) or Decimal(0)
-        lines.append(
-            t(
+        if a.condition == "pct_change" and a.reference:
+            lines.append(t(
+                "alert_list_item_pct",
+                lang,
+                id=a.id,
+                symbol=a.symbol,
+                target=f"{a.target:.2f}",
+                reference=fmt(a.reference, decimals),
+                price=fmt(price, decimals),
+            ))
+        else:
+            lines.append(t(
                 "alert_list_item",
                 lang,
                 id=a.id,
@@ -208,8 +237,7 @@ async def list_alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 op=_op_str(a.condition),
                 target=fmt(a.target, decimals),
                 price=fmt(price, decimals),
-            )
-        )
+            ))
     await msg.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
 
 

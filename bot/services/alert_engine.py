@@ -20,14 +20,16 @@ from bot.services import price_feed, symbols
 
 logger = logging.getLogger(__name__)
 
-_OP = {"above": ">", "below": "<"}
+_OP = {"above": ">", "below": "<", "pct_change": "±%"}
 
 
-def _is_triggered(cond: str, price: Decimal, target: Decimal) -> bool:
+def _is_triggered(cond: str, price: Decimal, target: Decimal, reference: Decimal | None = None) -> bool:
     if cond == "above":
         return price >= target
     if cond == "below":
         return price <= target
+    if cond == "pct_change" and reference and reference != 0:
+        return abs((price - reference) / reference * 100) >= target
     return False
 
 
@@ -51,7 +53,7 @@ async def scan_and_fire(bot: Bot, tier: str) -> None:
         price = await price_feed.get_price(alert.symbol)
         if price is None:
             continue
-        if _is_triggered(alert.condition, price, alert.target):
+        if _is_triggered(alert.condition, price, alert.target, alert.reference):
             to_fire.append((alert, user, price))
 
     if not to_fire:
@@ -67,9 +69,20 @@ async def scan_and_fire(bot: Bot, tier: str) -> None:
 
             info = symbols.get_info(fresh.symbol)
             try:
-                await bot.send_message(
-                    chat_id=user.tg_id,
-                    text=t(
+                if fresh.condition == "pct_change" and fresh.reference:
+                    pct_moved = (price - fresh.reference) / fresh.reference * 100
+                    msg_text = t(
+                        "alert_triggered_pct",
+                        user.lang,
+                        id=fresh.id,
+                        symbol=fresh.symbol,
+                        pct=f"{pct_moved:+.2f}",
+                        reference=f"{fresh.reference:.{info.decimals}f}",
+                        price=f"{price:.{info.decimals}f}",
+                        target=f"{fresh.target:.2f}",
+                    )
+                else:
+                    msg_text = t(
                         "alert_triggered",
                         user.lang,
                         id=fresh.id,
@@ -77,7 +90,10 @@ async def scan_and_fire(bot: Bot, tier: str) -> None:
                         op=_OP.get(fresh.condition, fresh.condition),
                         target=f"{fresh.target:.{info.decimals}f}",
                         price=f"{price:.{info.decimals}f}",
-                    ),
+                    )
+                await bot.send_message(
+                    chat_id=user.tg_id,
+                    text=msg_text,
                     parse_mode=ParseMode.MARKDOWN,
                 )
             except Exception as exc:

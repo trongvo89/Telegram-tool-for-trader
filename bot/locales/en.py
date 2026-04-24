@@ -75,16 +75,23 @@ STRINGS: dict[str, str] = {
     "alert_pick_condition": "Pick condition for *{symbol}* (current: `{price}`):",
     "alert_cond_above": "⬆️ Crosses above",
     "alert_cond_below": "⬇️ Crosses below",
+    "alert_cond_pct_change": "📊 % Change",
     "alert_target_prompt": "Enter target price:",
+    "alert_target_prompt_pct": "Enter % change (e.g. `3` = alert when price moves ±3% from current level):",
     "alert_created": (
         "✅ Alert *#{id}* created\n"
         "{symbol} {op} `{target}`\n"
         "Current: `{price}`"
     ),
+    "alert_created_pct": (
+        "✅ Alert *#{id}* created\n"
+        "{symbol} moves ±`{target}`% from `{reference}`"
+    ),
     "alert_symbol_invalid": "❌ No price found for this symbol. Please check.",
     "alert_list_empty": "No active alerts. Use /alert to create one.",
     "alert_list_header": "*Active alerts:*",
     "alert_list_item": "`#{id}` {symbol} {op} `{target}` (now: `{price}`)",
+    "alert_list_item_pct": "`#{id}` {symbol} ±`{target}`% from `{reference}` (now: `{price}`)",
     "alert_deleted": "🗑 Deleted alert #{id}.",
     "alert_not_found": "Alert not found.",
     "alert_limit_free": "⚠️ Free plan limited to *{limit}* alerts. /upgrade for unlimited.",
@@ -92,6 +99,11 @@ STRINGS: dict[str, str] = {
         "🚨 *Alert #{id} triggered!*\n"
         "{symbol} {op} `{target}`\n"
         "Current: `{price}`"
+    ),
+    "alert_triggered_pct": (
+        "🚨 *Alert #{id} triggered!*\n"
+        "{symbol} moved `{pct}%` from `{reference}` → `{price}`\n"
+        "Threshold: ±{target}%"
     ),
     "alert_market_closed": "🕑 Market is closed (weekend/holiday). Commodity alerts paused.",
 
@@ -107,7 +119,15 @@ STRINGS: dict[str, str] = {
     "log_tp": "Enter take-profit (or type `skip`):",
     "log_note": "Short note (or type `skip`):",
     "log_saved": "✅ Trade *#{id}* saved: {side} {symbol} @ `{entry}`",
+    "log_auto_close_note": "🤖 TP/SL set — trade will auto-close when target is hit.",
     "log_limit_free": "⚠️ Free plan limited to *{limit}* trades/month. /upgrade for unlimited.",
+    "trade_auto_closed": (
+        "🤖 *Trade #{id} auto-closed — {reason}*\n"
+        "{symbol} @ `{exit}`\n"
+        "PnL: `{pnl}` USD ({pnl_pct}%)"
+    ),
+    "close_reason_tp": "Take Profit hit",
+    "close_reason_sl": "Stop Loss hit",
 
     "close_usage": "Usage: `/close <id> <exit_price>`",
     "close_not_found": "Trade not found or already closed.",
