@@ -106,12 +106,18 @@ async def on_successful_payment(update: Update, context: ContextTypes.DEFAULT_TY
             "status": "success",
             "raw_payload": json.dumps(sp.to_dict()),
         }
-        # upsert on tx_id to make webhook idempotent
+        # Upsert on tx_id; rowcount==1 means new payment, ==0 means Telegram retry.
+        # Only call activate_premium on new inserts to stay idempotent.
         if settings.database_url.startswith("postgresql"):
             stmt = pg_insert(Payment).values(**stmt_values).on_conflict_do_nothing(index_elements=["tx_id"])
         else:
             stmt = sqlite_insert(Payment).values(**stmt_values).on_conflict_do_nothing(index_elements=["tx_id"])
-        await s.execute(stmt)
+        result = await s.execute(stmt)
+        inserted = result.rowcount == 1
+
+    if not inserted:
+        logger.info("Duplicate payment webhook for tx_id=%s, skipping activation", tx_id)
+        return
 
     until = await activate_premium(tg_id, days)
     lang = await get_lang(tg_id)

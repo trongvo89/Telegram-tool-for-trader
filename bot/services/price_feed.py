@@ -7,7 +7,7 @@ Commodities: TwelveData REST polled every N seconds by commodity_poller job,
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import httpx
@@ -28,7 +28,7 @@ TWELVEDATA_BASE = "https://api.twelvedata.com"
 
 async def _set_price(symbol: str, price: Decimal) -> None:
     async with _cache_lock:
-        _cache[symbol] = (price, datetime.now(timezone.utc))
+        _cache[symbol] = (price, datetime.now(UTC))
 
 
 async def get_price(symbol: str) -> Decimal | None:
@@ -151,5 +151,5 @@ async def refresh_commodity_cache() -> None:
 
 def is_market_closed_commodities() -> bool:
     """Commodity markets are closed on weekends (very rough; ignores holidays)."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return now.weekday() >= 5  # 5=Sat, 6=Sun

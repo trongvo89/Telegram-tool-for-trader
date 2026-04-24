@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -51,7 +51,7 @@ async def _check_free_quota(tg_id: int) -> bool:
     """Return True if user is within free tier quota (or premium)."""
     if await is_premium(tg_id):
         return True
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     async with session_scope() as s:
         res = await s.execute(
@@ -231,7 +231,7 @@ async def close_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         trade.exit = exit_price
         trade.pnl = pnl_of(trade.side, trade.entry, exit_price, trade.size)
         trade.status = "closed"
-        trade.closed_at = datetime.now(timezone.utc)
+        trade.closed_at = datetime.now(UTC)
         symbol = trade.symbol
         pnl = trade.pnl
         notional = trade.entry * trade.size

@@ -6,7 +6,7 @@ Two tick rates:
 Uses in-memory price cache from price_feed.
 """
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -42,7 +42,7 @@ async def scan_and_fire(bot: Bot, tier: str) -> None:
         rows = list(res.all())
 
     market_closed = price_feed.is_market_closed_commodities()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     to_fire: list[tuple[Alert, User, Decimal]] = []
 
     for alert, user in rows:

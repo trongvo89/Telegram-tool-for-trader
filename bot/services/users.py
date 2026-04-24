@@ -1,5 +1,5 @@
 """User access helpers: fetch or create User row, current language."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 
@@ -41,7 +41,10 @@ async def is_premium(tg_id: int) -> bool:
             return False
         if user.plan != "premium":
             return False
-        if user.premium_until and user.premium_until < datetime.now(timezone.utc):
+        expiry = user.premium_until
+        if expiry and not expiry.tzinfo:
+            expiry = expiry.replace(tzinfo=UTC)
+        if expiry and expiry < datetime.now(UTC):
             return False
         return True
 
