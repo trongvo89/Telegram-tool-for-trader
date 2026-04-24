@@ -7,7 +7,7 @@ from telegram.ext import Application, ApplicationBuilder
 from bot import models  # noqa: F401 - ensure models imported before create_all
 from bot.config import settings
 from bot.db import Base, engine
-from bot.handlers import alerts, calculator, journal, payment, start
+from bot.handlers import admin, alerts, calculator, journal, payment, start
 from bot.health import start_health_server
 from bot.i18n import validate_parity
 from bot.jobs import cron
@@ -71,6 +71,7 @@ def main() -> None:
     alerts.register(app)
     journal.register(app)
     payment.register(app)
+    admin.register(app)
 
     cron.schedule(app)
 
