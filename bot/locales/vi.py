@@ -8,6 +8,7 @@ STRINGS: dict[str, str] = {
     "no": "Không",
     "invalid_number": "Số không hợp lệ. Thử lại?",
     "error_generic": "Có lỗi xảy ra, thử lại sau.",
+    "price_unavailable": "⚠️ Không lấy được giá lúc này. Thử lại sau vài giây.",
     "premium_required": "Tính năng này cần gói Premium. Dùng /upgrade để nâng cấp.",
 
     # Asset classes

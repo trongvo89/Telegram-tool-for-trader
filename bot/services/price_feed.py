@@ -43,6 +43,25 @@ async def get_price_with_age(symbol: str) -> tuple[Decimal, datetime] | None:
         return _cache.get(symbol)
 
 
+async def update_cache(symbol: str, price: Decimal) -> None:
+    await _set_price(symbol, price)
+
+
+async def fetch_binance_spot_once(symbol: str) -> Decimal | None:
+    """One-shot Binance REST fetch for a single symbol (used when WS cache is cold)."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(
+                "https://api.binance.com/api/v3/ticker/price",
+                params={"symbol": symbol},
+            )
+            r.raise_for_status()
+            return Decimal(str(r.json()["price"]))
+    except Exception as exc:
+        logger.debug("Binance REST one-shot %s: %s", symbol, exc)
+        return None
+
+
 # ---------- Binance crypto WS ----------
 
 async def binance_ws_loop(stop_event: asyncio.Event) -> None:

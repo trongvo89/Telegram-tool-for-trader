@@ -72,7 +72,11 @@ async def on_asset_pick(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     info = symbols.get_info(value)
     price = await price_feed.get_price(value)
     if price is None:
-        await q.edit_message_text(t("alert_symbol_invalid", lang))
+        # Cache cold — try one immediate refresh before giving up
+        await price_feed.refresh_commodity_cache()
+        price = await price_feed.get_price(value)
+    if price is None:
+        await q.edit_message_text(t("price_unavailable", lang))
         return ConversationHandler.END
     context.user_data.update({
         "alert_asset_class": info.asset_class,
@@ -92,6 +96,11 @@ async def on_symbol_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     raw = update.message.text
     symbol = symbols.normalize_crypto_symbol(raw)
     price = await price_feed.get_price(symbol)
+    if price is None:
+        # WS may not be warm yet — try Binance REST as one-shot fallback
+        price = await price_feed.fetch_binance_spot_once(symbol)
+        if price is not None:
+            await price_feed.update_cache(symbol, price)
     if price is None:
         await update.message.reply_text(t("alert_symbol_invalid", lang))
         return A_SYMBOL

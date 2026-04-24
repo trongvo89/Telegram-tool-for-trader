@@ -8,6 +8,7 @@ STRINGS: dict[str, str] = {
     "no": "No",
     "invalid_number": "Invalid number. Try again?",
     "error_generic": "Something went wrong, please try again.",
+    "price_unavailable": "⚠️ Couldn't fetch price right now. Please try again in a moment.",
     "premium_required": "This feature requires Premium. Use /upgrade to unlock.",
 
     # Asset classes
