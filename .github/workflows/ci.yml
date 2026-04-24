@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+
+      - name: Secret leak scan
+        run: python scripts/check_secrets.py
+
+      - name: Ruff lint
+        run: ruff check bot/ tests/
+
+      - name: i18n parity check
+        env:
+          BOT_TOKEN: stub
+        run: |
+          python -c "from bot.i18n import validate_parity; issues = validate_parity(); \
+            print('OK — locales in parity') if not issues else (print(issues), exit(1))"
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
