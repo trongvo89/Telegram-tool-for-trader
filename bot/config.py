@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +19,13 @@ class Settings(BaseSettings):
     health_port: int = 8080
 
     log_level: str = "INFO"
+
+    @field_validator("owner_tg_id", mode="before")
+    @classmethod
+    def _coerce_owner_tg_id(cls, v):
+        if v == "" or v is None:
+            return None
+        return int(v)
 
 
 settings = Settings()
